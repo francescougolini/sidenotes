@@ -28,10 +28,9 @@ import {
   formatBytes,
 } from '../utils/utils';
 import {
+  DuplicateIcon,
   CopyIcon,
-  ShareIcon,
   CheckIcon,
-  DownloadIcon,
   PaletteIcon,
   BinIcon,
   AttachFileIcon,
@@ -67,7 +66,7 @@ const Note = ({
   const [localContent, setLocalContent] = useState(content);
   const [isDragging, setIsDragging] = useState(false);
   const [blobUrl, setBlobUrl] = useState(null);
-  const [shareStatus, setShareStatus] = useState('idle');
+  const [copyStatus, setCopyStatus] = useState('idle');
 
   // Collapse / expand state
   const [isCollapsible, setIsCollapsible] = useState(false);
@@ -352,39 +351,18 @@ const Note = ({
     }
   };
 
-  const handleShare = async () => {
-    const shareData = {
-      title: title || defaultTitle,
-      text: localContent,
-    };
-
+  const handleCopy = async () => {
     try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-        return;
-      }
-    } catch (err) {
-      if (err.name !== 'AbortError') {
-        console.error('Share failed:', err);
-      } else {
-        return;
-      }
-    }
-
-    // Fallback: copy to clipboard instead of auto-download
-    try {
-      const fullNote = (title ? title + '\n\n' : '') + localContent;
-      await navigator.clipboard.writeText(fullNote);
-      setShareStatus('copied');
-      setTimeout(() => setShareStatus('idle'), 2000);
+      await navigator.clipboard.writeText(localContent);
+      setCopyStatus('copied');
+      setTimeout(() => setCopyStatus('idle'), 2000);
     } catch {
-      // Last resort: download
-      const fullNote = (title ? title + '\n\n' : '') + localContent;
+      // Fallback: download
       const filename =
         (title || 'note').replace(/[^\p{L}^\p{N}]+/gu, ' ').trim() + '.txt';
-      downloadLocalFile(fullNote, filename, 'text/plain');
-      setShareStatus('downloaded');
-      setTimeout(() => setShareStatus('idle'), 2000);
+      downloadLocalFile(localContent, filename, 'text/plain');
+      setCopyStatus('downloaded');
+      setTimeout(() => setCopyStatus('idle'), 2000);
     }
   };
 
@@ -564,10 +542,10 @@ const Note = ({
             <button
               type="button"
               className="note-control hovering-label duplicate-note"
-              aria-label="Duplicate note"
+              aria-label="Duplicate"
               onClick={handleDuplicate}
             >
-              <CopyIcon />
+              <DuplicateIcon />
             </button>
           </div>
           <div className="note-control-container">
@@ -575,20 +553,18 @@ const Note = ({
               type="button"
               className="note-control hovering-label share-note"
               aria-label={
-                shareStatus === 'copied'
+                copyStatus === 'copied'
                   ? 'Copied!'
-                  : shareStatus === 'downloaded'
+                  : copyStatus === 'downloaded'
                     ? 'Downloaded!'
-                    : 'Share note'
+                    : 'Copy'
               }
-              onClick={handleShare}
+              onClick={handleCopy}
             >
-              {shareStatus === 'copied' ? (
+              {copyStatus === 'copied' || copyStatus === 'downloaded' ? (
                 <CheckIcon size="16" />
-              ) : shareStatus === 'downloaded' ? (
-                <DownloadIcon size="16" />
               ) : (
-                <ShareIcon size="16" />
+                <CopyIcon size="16" />
               )}
             </button>
           </div>
@@ -616,7 +592,7 @@ const Note = ({
           <div className="note-control-container">
             <div
               className="note-control hovering-label move-note"
-              aria-label="Move note"
+              aria-label="Move"
             >
               <input
                 ref={positionRef}
