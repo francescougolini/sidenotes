@@ -572,7 +572,7 @@ const Note = ({
             <button
               type="button"
               className="note-control hovering-label change-accent-color"
-              aria-label="Color"
+              aria-label="Colour"
               onClick={handleChangeColor}
               style={iconColorStyle}
             >
